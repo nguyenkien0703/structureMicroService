@@ -1,0 +1,267 @@
+--monitor admin: ddongs vai trò theo dõi trạng thái và từng con service dang chay 
+--gateway-service: đầu vòa dữ liệu api, dựa vào đường dẫn api nó sẽ gọi từng con 
+service tuowg ứng 
+--auth-service: xác thực tài khoản và phân quyền 
+-account-service: đăng kí các con service theo tên xong rồi cái tên này nó sẽ tự 
+động tìm địa chỉ ip thì dễ dàng làm cân bằng tải trong hệ thống micro-service
+--zipkin : đóng vai trò để 1 cái request gửi đi từ con service này đến service kia 
+rất là dễ dàng, khi chúng ta gặp vấn đề trong code thì chúng ta có thể biết dc 
+lỗi gặp ở con service để chúng ta tìm trong log cho nhanh 
+=========TỔNG QUÁT VỀ MICROSERVICE=======
+---Microservice là một kiến trúc phần mềm phân tán, trong đó các ứng dụng lớn được chia thành các thành phần nhỏ hơn được gọi là dịch vụ. 
+Mỗi dịch vụ có thể được phát triển và triển khai độc lập với các dịch vụ khác, và có thể được giao tiếp với các dịch vụ khác thông qua các giao thức chuẩn.
+---Microservice giúp giảm chi phí phát triển phần mềm bằng cách chia nhỏ các ứng dụng thành các dịch vụ nhỏ hơn và có thể được phát triển độc lập.
+ Nó cũng cho phép phát triển nhanh chóng và triển khai linh hoạt, giúp giảm thời gian phát triển ứng dụng và tăng tính sẵn sàng của ứng dụng.
+---Các dịch vụ Microservice phải có khả năng hoạt động (Operability) để đảm bảo tính nhất quán. 
+Điều này đòi hỏi các dịch vụ Microservice phải được thiết kế và triển khai một cách đúng đắn, có khả năng quản lý, giám sát, và đưa ra cảnh báo khi có sự cố xảy ra.
+ Ngoài ra, các dịch vụ cần được tự động hóa để giảm thiểu nhân lực và tăng tính đáng tin cậy của hệ thống.
+ Quản lý và giám sát đúng đắn sẽ giúp cho việc phát hiện và khắc phục sự cố nhanh chóng, giảm thiểu thời gian gián đoạn và tăng tính khả dụng của hệ thống.
+---Việc sử dụng microservice mang lại nhiều lợi ích cho các tổ chức và nhà phát triển, 
+bao gồm: Tính linh hoạt và mở rộng: Các dịch vụ được phân tách và triển khai độc lập với nhau, cho phép tổ chức có thể dễ dàng mở rộng hoặc thu nhỏ các dịch vụ một cách linh hoạt theo nhu cầu của họ. 
+Dễ dàng quản lý và bảo trì: Các dịch vụ có thể được quản lý và bảo trì độc lập với nhau, giúp tăng tính khả dụng và giảm thiểu thời gian chết của toàn bộ hệ thống.
+ Phát triển độc lập: Các dịch vụ có thể được phát triển và cập nhật độc lập với nhau, giúp tăng tính độc lập và giảm thiểu rủi ro khi xảy ra lỗi trong
+---Độ phức tạp: Hệ thống Microservice có thể rất phức tạp, đặc biệt là trong việc quản lý các dịch vụ và giao tiếp giữa chúng. 
+Tăng độ phức tạp của việc triển khai: Với Microservice, việc triển khai và quản lý các dịch vụ phải được thực hiện độc lập với nhau, dẫn đến tăng độ phức tạp trong việc triển khai.
+ Tăng chi phí phát triển: Phát triển các dịch vụ Microservice yêu cầu một mức độ kỹ năng cao hơn so với các kiến trúc monolithic truyền thống, do đó tăng chi phí phát triển.
+ Khó khăn trong việc kiểm soát dữ liệu: Vì các dịch vụ Microservice thường phân tán và có thể sử dụng các cơ sở dữ liệu
+
+=========APACHE KAFKA=====================
+
+Apache Kafka là một nền tảng phân tán được thiết kế để xử lý dữ liệu dòng (stream data). 
+Nó cho phép bạn gửi, lưu trữ, xử lý và phân phối dữ liệu dòng qua các ứng dụng và hệ thống.
+Apache Kafka sử dụng một giao thức riêng để truyền tải dữ liệu. 
+Giao thức này là một giao thức tùy chỉnh được thiết kế để hỗ trợ việc gửi và nhận dữ liệu một
+ cách hiệu quả trong môi trường phân tán.
+Trong Kafka, dữ liệu được lưu trữ trong các partition (phân vùng).
+ Mỗi topic (chủ đề) được chia thành nhiều partition, và mỗi partition lưu trữ một phần của dữ liệu. 
+Các partition cho phép Kafka mở rộng và xử lý dữ liệu lớn.
+Apache Kafka sử dụng một cơ chế log-based để đảm bảo độ tin cậy và xử lý lại dữ liệu.
+ Mỗi sự kiện được ghi lại trong một log không thay đổi và được lưu trữ theo thứ tự. 
+Điều này cho phép Kafka cung cấp tính năng xử lý lại (replay) dữ liệu, đảm bảo rằng không có dữ liệu nào bị mất và 
+cho phép các ứng dụng đọc lại dữ liệu từ đầu.
+
+===========API GATEWAY===================
+Trong Spring Cloud Gateway, Route là một quy tắc định nghĩa cách xử lý yêu cầu từ một URL cụ thể. 
+Nó xác định các điều kiện và hành động cần thiết để định tuyến yêu cầu từ URL được chỉ định đến dịch vụ tương ứng.
+Filter trong Spring Cloud Gateway là một tác nhân xử lý yêu cầu và phản hồi, cho phép thay đổi và kiểm soát luồng dữ liệu khi đi qua Gateway.
+ Các Filter có thể thực hiện các chức năng như xác thực, ghi log, chuyển đổi định dạng dữ liệu, định tuyến, bảo mật và nhiều hơn nữa.
+Spring Cloud Gateway hỗ trợ khả năng cân bằng tải giữa các phiên bản dịch vụ khác nhau.
+ Nó có thể tự động phân phối lưu lượng yêu cầu đến các phiên bản dịch vụ khác nhau để cân bằng tải và đảm bảo rằng các dịch vụ hoạt động hiệu quả và sẵn sàng phục vụ người dùng.
+API Gateway là một cổng vào duy nhất cho các yêu cầu của người dùng đối với hệ thống. 
+Nó hoạt động như một lớp trung gian giữa người dùng và các dịch vụ trong hệ thống phân tán, điều hướng yêu cầu đến dịch vụ thích hợp và thực hiện các chức năng như bảo mật, 
+quản lý giao diện, ghi lại lịch sử yêu cầu, và nhiều hơn nữa.
+Spring Cloud Gateway là một thư viện mã nguồn mở dùng để xây dựng ứng dụng sử dụng API Gateway. 
+Nó cung cấp các công cụ và khung công việc cho việc xây dựng, cấu hình và quản lý một cổng API đa nhiệm trong môi trường phân tán.
+===========AXON FRAMEWORK================================
+---Axon Framework là một thư viện mã nguồn mở được sử dụng để phát triển các ứng dụng sử dụng Event Sourcing và CQRS (Command Query Responsibility Segregation). 
+Nó cung cấp các công cụ và cấu trúc để xây dựng hệ thống dựa trên sự kiện và phân tách trách nhiệm giữa các lệnh (commands) và truy vấn (queries).
+---Trong Axon Framework, Event là một sự kiện quan trọng xảy ra trong hệ thống. Nó biểu diễn một hành động đã xảy ra trong quá khứ và được lưu trữ trong Event Store.
+ Event Store là nơi lưu trữ tất cả các sự kiện đã xảy ra trong hệ thống để có thể tái tạo trạng thái hiện tại của đối tượng.
+---Trong Axon Framework, Command là một yêu cầu từ người dùng hoặc hệ thống để thực hiện một hành động. 
+Nó biểu thị ý định của người dùng hoặc hệ thống và được gửi đến các xử lý viên (command handler) để thực thi các logic kinh doanh tương ứng.
+---CQRS (Command Query Responsibility Segregation) là một kiến trúc phân tách trách nhiệm giữa việc xử lý các lệnh (commands) và truy vấn (queries) trong một hệ thống. 
+Thay vì sử dụng một mô hình truy vấn-chỉnh sửa (CRUD), CQRS chia thành hai mô hình riêng biệt để xử lý các yêu cầu chỉnh sửa và truy vấn, tối ưu hóa hiệu suất và khả năng mở rộng 
+của hệ thống.
+
+là 1 framework dùng để build microservice với design pattern là cqrscũng như là sẽ chia cái cấu trúc
+của project ra hai phần riêng biệt là command và query
+Phiên bản nó phải phù hợp,
+chỗ parent thì version 2.6.7,spring-cloud.version thì 2021.0.2 còn axon thì version 4.5.9
+==========EVENT SOURCING =============
+Event Sourcing là một cơ chế lưu trữ dữ liệu trong kiến trúc phần mềm, trong đó dữ liệu được lưu trữ dưới dạng chuỗi các sự kiện (events).
+Thay vì lưu trữ trạng thái hiện tại của đối tượng, Event Sourcing lưu trữ các sự kiện đã xảy ra và sử dụng chúng để xây dựng trạng thái hiện tại.
+---> đại khái là nó chỉ quản lí trạng thái dữ liệu thoi
+==========DISCOVERY SERVER VÀ DISCOVERY CLIENT  VÀ EUREKa========
+--Discovery Server, trong trường hợp này Eureka Server, là một máy chủ đăng ký và lưu trữ thông tin về các dịch vụ có sẵn trong mạng. 
+Nó cho phép các dịch vụ khác đăng ký với nó và cung cấp thông tin chi tiết về chính mình để có thể được khám phá bởi các dịch vụ khác.
+--Eureka là một công nghệ phát triển bởi Netflix. Nó được sử dụng làm thành phần quan trọng trong hệ thống microservices của Netflix để quản lý và khám phá các dịch vụ.
+---Discovery Client là một thư viện hoặc module được tích hợp vào các dịch vụ trong hệ thống để chúng có thể đăng ký với Discovery Server (Eureka Server) 
+và tìm kiếm các dịch vụ khác trong mạng.
+---Eureka Server hoạt động bằng cách cho phép các dịch vụ đăng ký thông tin của mình với nó, bao gồm địa chỉ IP, cổng và tên dịch vụ. 
+Các dịch vụ sẽ cập nhật thông tin này với Eureka Server định kỳ để thông báo rằng chúng vẫn hoạt động.
+----Eureka Server có khả năng cân bằng tải giữa các phiên bản dịch vụ khác nhau để đảm bảo rằng các yêu cầu được phân phối đều và hiệu suất hệ thống được tối ưu.
+ Điều này giúp đảm bảo rằng một phiên bản dịch vụ không quá tải trong khi các phiên bản khác còn trống rỗng.
+----> EUREKA HỖ TRỢ CÂN BẰNG TẢI 
+=======================================
+---web application: dc thiết kế cho end-users
+-web service thiết kế để giao tiếp giữa các chương trình phần mềm 
+
+==========@EnableDiscoveryClient======
+khi 1 service nào mà m muốn chạy lên thì nó đăng kí với cái discovery thì thêm cái annotation này ở trong file chính 
+==============axonserver====
+1: là 1 hệ thống cơ sở dữ liệu sự kiện(event store), lưu trữ và quản lí các sự kiện dc sinh ra
+bởi microservice--> ghi lại lịch sử của hệ thống và cho phép restore of object 
+2: đảm nhận việc gửi và nhận các thông điệp giữa các service với nhau, để các service nch với nhau 
+3: theo dõi, sao lưu để giám sát hiệu suấ, cho phép theo dõi về các thông số về việc xử lí 
+sựi kiện ,lưu lượng thông điệp
+--> v nên khi bắt đầu code microservice thì nhớ bật axonserver lên bằng câu lệnh: java -jar axonserver.jar
+==================
+------------------------------------------------------------------ĐỂ GIAO TIẾP GIỮA CÁC SERVICE THÌ DÙNG EVEN SOURCING CHỨ K PHẢI LÀ QUA RESFUL API ĐÂU NHÉ 
+============annotation @AggregateIdentifier====
+1: dc đặt trên 1 trường trong 1 lớp aggregate để đánh dấu trg đó là định danh duy nhất của aggregate, kiểu nó đại diện cho id 
+2: nhiệm vụ 
+a) định danh aggregate: annotation cho phép axon xác định trg nào là định danh duy nhất 
+b) định danh event: axon sử dụng annotaiton này để kết hợp các sự kiện*(events) với đúng aggregate tương ứng. 
+khi 1 sự kienj xảy ra, nó sẽ dc liên kết với aggregate thông qua trg dc đánh dấu cái annotation kia 
+để xác địn và khooi phhujc trạng thái cảu aggregate từ các sự kiện đã xảy ra 
+===========annotation @QueryGateway============
+dc sủ dụng trong các framework như axon,làm nhieemhj vụ trung gian giữa các serivice và query dữ liệu 
+--> chức năng chính: tạo ra 1 lớp trung gian để gửi các truy vấn từ 1 service này đến 1 service khác và thu thập kết quả trả về.
+giảm sự phụ thuojc trực tiếp giữa các service và cho phép chugs tương tác với nhau thong qua truy vấn 
+khi 1 service đc đánh đấu là @QueryGateway, nó dc coi là trung tâm xử lí truy vấn(query handler)
+chịu trách nhiệm xử lí truy vấn dc gửi từ các service 
+cụ thể, khi 1 truy vấn dc gửi đến 1 service thông qua @queryGateway, nó sẽ chuyeenr tiếp truy vấn đó đến các thành phần liên quan 
+trong microservice để thực hiện truy vấn dữ liệu. sau đó nó nhận kết quả trả về từ các thành phần và chuyển tiếp két quả đó trở lại cho 
+serivice đã gửi truy vấn ban đầu 
+============CommmandGateway=====
+dc sử dụng để gửi lệnh từ service này đến service khác và thực hiện các hành động thay đổi trạng thái của hệ thống 
+--> tóm lại mục đích chính là nó dc sử dụng đẻ gửi lệnh 
+=========@TargetAggregateIdentifier=====
+--ví dụ giờ có 1 lệnh là CreateOrderCommand, để tạo đơn hàng mới và lệnh này cần xác định aggegate là đối tượng "order" trong entity.
+bạn có thẻ dùng @TargetAggregateIdentifier để đánh dáu trg đại diện cho định danh của đơn hàng (ví dụ orderId). khi lệnh dc gửi đi, 
+framework sẽ sư dụng giá trị orderId đẻ xác định aggregate "Order" cần được tạo
+---> vậy tóm lại là trong cấu trúc của microservice, khi có 1 sự thay đổi gì đó, ví dụ như là tạo 1 nhân viên mới thì quy trình ;là 
+B0: bạn phải thu thập thông tin từ RequestModel của đối tượng đó dưới dạng 1 aggregate và được tổng hợp làm tham số đầu vào của lệnh 
+mà trong cái lớp lệnh thì có @TargetAggregateIdentifier , chả có j đặc biệt. gióng như entity có @Id 
+thì ở lớp command có cái đó 
+B1:sau đó nó phải phát ra dc lệnh(command) để thu thập thông tin, và commandGateway sẽ gửi nó đi
+B2: sau đó thì trên đường truyền, bạn phaiur chuyển đổi từ lệnh thành sự kiện, áp dụng @CommandHandler
+B3: sau khi có sự kiện rồi, thì xử lí sự kiện. Áp dụng @EventSourcingHandler. xử lí ở đây là trên cái sự kiện đó nó sẽ lưu lại 
+lịch sử thay đổi của sự kiện, thuộc tính nào của object thay đổi 
+(thật ra sự kienj hay cai j thì nó cũng chỉ là thuôc tính của các dối tượng, nó kieur như cứ chuyển qua chuyển lại ấy mà )
+
+B4: cuối cùng nó lại có 1 lớp để xử lí sự kiện đó,bởi vì bay giờ thằng sự kiện này đang có những cái thứ thay đổi của thuộc tính của đối tượng
+nên bây giờ aim là: cập nhật những cái đó lên thằng entity, áp dụng @EventHandler và nhớ đánh dấu nó là @Component để nó là 1 bean,khi chạy spring sẽ quét qua nó,
+tham số đầu vào là 1 sự kienj và trả về là 1 entity, nếu xóa thì k trả về j cả, trả về mã code cx dc
+vậy quy trình các tầng là: controller -> command-> event-> xử lí sự kiện -> cập nhật lại lên entity
+
+
+--aggregate trong microservice là 1 tập hợp các dối tượng
+==============================kafka====
+----> mỗi khi bát đầu với kafka thì nhớ vào thư mục C:\kafka_2.13-3.2.0\bin\windows rooiif chạy 
+lệnh này để bật kafka lên kafka-server-start.bat C:\kafka_2.13-3.2.0\config\server.properties
+========@EnableBinding(Sink.class)========
+--là 1 annotation trong spring cloud stream, có chức năng khai báo và cấu hình các binding(liên keest) 
+giữa ứng dụng và message broker để truyền và nhận thông điệp(message)
+--khi bạn sử dụng @EnableBinding(Sink.class), nghĩa alf đang khái báo ứng dựng đg liên kết với Sink 
+đó là 1 kiểu Binding định nghĩa sẵn trong spring cloud tream, Sink thường dc dùng để nhận các message từ broker 
+-- các chức năng chính của @EnableBinding(Sink.class)
+	1: cấu hình Binding: annotation này sẽ tạo ra 1 bean Binding thông qua spring cloud stream để kết nối uwngsdungj với message broker, Binding cung 
+				cấp khả năng nhận message
+	2: nhận thông điệp: khi @EnableBinding(Sink.class) dc sử dụng, nghĩa là nó dc phép làm việc với message.
+	khi 1 cái nhận dc message, nó dc chú thích với @StreamListener để xác định rằng chúng là các listener(ng nghe) cho các thông điệp từ Sink
+----------> tóm lại chức ăng chính cảu nó là nhận message, thằng này nhận thì có thằng khác gửi để cho tk này nhận là @EnableBinding(Source.class)
+
+=========== chức năng ObjectMapper=========
+là 1 lớp trong thưu viện Jackson dc sử dụng đẻ convert giữa các đối tượng java và các định dạng dữ liệu như Json, Xml và các kiểu dữ liệu khác 
+--chưcs năng chính: 
++) chuyển đói tượng java thành dữ liệu như json
++)chuyển dữ liệu từ json thành đối tượng java
+-----> Object mapper thường dc dùng trong việc xử lí api, resfult, truyền/nhận dữ liệu json
+và chủ yếu là các tác vụ liên quan đến chuyển đối dữ liệu trong ứng dụng 
+==============MessageChannel=========
+là 1 thành phần của spring integration, dc sử dụng để gửi và nhận các message giữa các thành phần trong hệ thống 
+--chức năng chính: 
++)gửi message: từ 1 thành phần(như producer or pulisher) đến 1 or nhiều( consumer or subscriber). MessageChannel
+cung cấp các method gửi message với cá thông tin liên quan như header, payload, metadata
++) nhận message: MessageChannel cx cho phép đki để nhân và xử lí các message. khi 1 message dc gửi tới 
+MessageChannel, nó sẽ dc truyền tới các thành phjanf đăng kí(như consumer or subscriber) đẻ xử lí 
++) định tuyến message: dựa trên các payload, header, điều kiện, phan loại 
+============@EnablaBinding(Source.class)=========
+tóm lại thằng này dc dùng để gửi message đi, nhớ @Autowired cái MessageChannel để nó gửi message đi là ok
+========XStream=======
+cho phép chuyển đổi đối tượng java thành kiểu dữ liệu xml và ngược lại 
+========@saga==============
+1 saga có thể dc hiểu như 1 luồng công việc(workflow) or quy trình(process) troing hệ thống 
+ví dụ như để đặt 1 đơn hàng, thì đầu tiên qua bước đăng kí chẳng hạn, xong đó dữ liệu đki ví dụ chỉ gồm 
+employeeId thôi, thì sau đó qua service thứ 2 là product chẳng hạn nma lỡ may sản phầm càn mua nó hết rồi, 
+thì phải có 1 cái j đó nó xóa đi dữ liệu đã ghi vào db ở service trc,, chính là employyId
+-----chức năng:
++) quản lí giao dịch: saga dc sử dụng để quản lí và điều phối cá giao dịch phan tán, nếu 1 giao dịch 
+phức tạp vần dc thực hiện qua nhiều service, thì saga sẽ đảm bảo tính toàn vẹn của giao dichju bawbngf 
+cách quản lí các bước và phản hồi từ các service lieenquan 
++) saga quản lí cac bước thực hiện của quy trình phức tạp, nó theo dõi trạng thái của các bước và quyết 
+định bước tiếp theo dựa trên kết quả của các bước trước. điều này giúp đồng bộ và tuần tự dữ liệu 
+----------ví dụ như trong cái dự án mà đang làm, sau khi tạo dc cái borrowingEventsHandler thì nó 
+sẽ lưu 1 record ng mượn sách xuống db, sau đó nó mới chạy đến saga BorrowingSaga
+=========    @StartSaga và @SagaEventHandler(associationProperty = "id")========
+để bắt đầu làm việc với saga thì ta import     @StartSaga và sau đó 
+import thêm @SagaEventHandler(associationProperty = "id"), cái associationProperty chính là cái mà được 
+đánh dấu @TargetAggregateIdentifier của cái event đó, ví dụ như event BookCreateEvent thì cái 
+associationProperty="id" chính là cái id đó 
+ví dụ như ở BorrowingSaga thì sau khi  mà BorrowingEventsHandler nó có cái createBook, sau khi nó 
+tạo dc 1 bản ghi ở db r thì nó sẽ nhảy vào saga, và nó bắt đầu vòng đời tại đây 
+=======gateway filter jwt token=-========
+muốn cho cái service nào có filter thì điền vào api-gateway,
+nhớ thêm @commponent đẻ spring quét cả no
+trong service api-gateway tạo 1 folder configuration và trong đó chứa class AuthFilter
+và kế thừa AbstractGatewayFilterFactory, đây là 1 lớp trong spring cloud gateway, 
+lớp này cung cấp 1 cơ chế để tạo ra bộ lọc (filters) để xử lí các request đi qua cổng 
+<AuthFilter.Config> là 1 ví dụ vè tham số kiểu dc truyền vào chỗ kế thừa kia để nói là 
+hãy lọc theo tất cả những gì có trong cái class AuthFilter
+===========HỌC VIẾT TEST=======
+------Jacoco-------
+để xem code xem, màu xanh là nó cover rồi, màu đỏ là chưa cover còn màu vàng là....
+-----@ExtendWith(SpringExtension.class)=====
+là 1 annotation của spring dc sử dụng cho việc test 
+khi sử dugj, nó nói cho JUint rằng bạn muốn sử dụng extension dc sp bởi spring để testing
+SpringExtension là 1 extension dc cung cấp bởi spring để tích hợp với JUint
+----@Mock----
+nghĩa là giả lập, ví dụ như chỗ kia thì mình đang @Autowired userService thì ở đây@Mock
+-----@InjectMocks----------
+muốn test cho thằng nào thì InjectMock thằng đó
+-----------
+    @BeforeEach
+    public void setUp(){
+        
+    }
+---> @BeforeEach: có nghĩa là trc khi chạy vào 1 testcase thì nó sẽ chạy vào đây trc để 
+setup môi trg, biến,... 
+--------1 TIP KHI VIẾT TEST------
+là tắt hết các service đi, chỉ viết test xong mở terminal lên chạy mvn clean install 
+xong check jacoco thoi, thì chạy dc và chạy đúng 100%
+còn k hiểu sao lúc đang chạy cả mấy cái service kia thì chạy nó cứ báo lỗi, chả hiểu lí do là gì 
+============intergationtest=======
+cái này dc viết sau khi từng bộ phận đã dc viết uint test 
+ví dụ như userservice, sau khi viets @Test cho mấy cái kia thì sau khi hoàn thành 
+giờ mới đi viết intergationTest
+============RestTemplate====
+khi bắt đầu viết intergationTest thì có khai báo cái RestTemplate, cái này dùng để gọi api 
+===========Gson======
+nó là 1 cái dùng đẻ chuyển json -> đối tượng java và ngược lại, dc dùng trong kiểm thử(testing) và đặc biệt là intergation test
+ví dụ, gson convert đối tuwogj java thành json trc khi gửi dữ liệu đến 1 api, sau đó gson có thể convert json nhận được từ 1 api thành
+đối tượng java để trả về
+==========HttpHeaders========
+HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        HttpEntity<String> entity = new HttpEntity<String>(headers);
+là 1 đối tượng trong spring dc sủ dụng để đại diện cho các TIÊU ĐỀ HTTP trong 1 yêu cầu 
+or 1 phản hồi HTTP, đối tượng này dc sử dụng để cấu hình thông tin các tiêu đề, 
+như là Accept, authorization, Conten-type,...
+tiếp theo là dòng accept kia, chỉ định loại nội dung mà client muốn nhận từ server.
+HttpEntity là 1 đối tượng trong spring để đại diện cho 1 yêu cầu or phản hồi HTTP đầy
+đủ, bao gồm cả tiêu đề và nội dung. trong trg hợp này, nó dc sú dụng đẻ đại diện cho 1 
+http ko có nội dung(body) và chỉ có các tiêu đề đã dc cấu hình.kiểu dữ liệu dc xác định 
+là string 
+==============Liquibase======
+https://topdev.vn/blog/database-migration-su-dung-liquibase/
+kiểu mỗi phase thì mình sẽ release app ra 1 version mới, cái này giúp mình có thể quay lại version cũ 
+===============WebClient.Buider()============================
+là 1 cái để giao tiếp giữa các service(cái này t cũng chưa hiểu rõ lắm, nên có thể là sẽ học thêm sau)======
+==============ZIPKIN  VÀ SLEUTH===============
+---Cả Zipkin và Sleuth đều là công cụ được sử dụng để theo dõi và phân tích dữ liệu yêu cầu và phản hồi trong hệ thống phân tán. 
+Chúng giúp ghi lại thông tin về các yêu cầu và phản hồi giữa các dịch vụ khác nhau, cho phép quan sát và phân tích hiệu suất và sự tương tác giữa các thành phần.
+----Zipkin là một công cụ được sử dụng để quản lý và giám sát các dịch vụ trong hệ thống phân tán. 
+Nó giúp ghi lại và hiển thị thông tin về các yêu cầu và phản hồi giữa các dịch vụ, cho phép theo dõi và phân tích hiệu suất, đồng thời giúp tìm ra các vấn đề và lỗi trong hệ thống.
+-----Sleuth là một công cụ nằm trong framework Spring Cloud.
+ Nó cung cấp tích hợp với Spring Boot để thu thập và ghi lại thông tin về các yêu cầu và phản hồi giữa các dịch vụ trong hệ thống phân tán,
+ giúp theo dõi và phân tích quá trình giao tiếp giữa các thành phần.
+=======================CIRCUIR BREAKER==============
+-----Circuit Breaker là một mô hình được sử dụng để bảo vệ hệ thống phân tán khỏi sự cố khi một dịch vụ gặp vấn đề.
+ Nó giúp giới hạn số lượng yêu cầu tới dịch vụ đó trong một khoảng thời gian nhất định và xử lý các lỗi một cách kiểm soát.
+----Một trong những đặc điểm chính của mô hình Circuit Breaker là giới hạn số lượng yêu cầu tới một dịch vụ. 
+Khi dịch vụ gặp vấn đề, Circuit Breaker sẽ ngắt kết nối tới dịch vụ đó và giới hạn việc gửi yêu cầu, tránh quá tải và làm hỏng hệ thống.
+=========================
+
+
+
